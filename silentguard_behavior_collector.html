@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="SilentGuard AI — ML-based passive human verification system. Replaces CAPTCHA with behavioral analysis.">
+  <meta name="author" content="SilentGuard AI">
+  <title>SilentGuard AI — Passive Human Verification</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡</text></svg>">
+  <!-- Cloudflare Turnstile -->
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" defer async></script>
+</head>
+<body style="margin:0; background:#0a0e1a;">
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  .sg-wrap {
+    font-family: 'DM Sans', sans-serif;
+    background: #0a0e1a;
+    color: #e8eaf0;
+    min-height: 600px;
+    padding: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sg-header {
+    background: #0a0e1a;
+    border-bottom: 1px solid #1e2640;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .sg-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .sg-logo-icon {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #3b82f6, #06d6a0);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+  }
+
+  .sg-logo-text {
+    font-family: 'Space Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: #e8eaf0;
+    letter-spacing: 1px;
+  }
+
+  .sg-logo-sub {
+    font-size: 10px;
+    color: #4a6fa5;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .sg-status-pill {
+    background: #0f1d14;
+    border: 1px solid #1a4a2a;
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 11px;
+    color: #06d6a0;
+    font-family: 'Space Mono', monospace;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .sg-pulse {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #06d6a0;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .sg-main {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 0;
+    flex: 1;
+  }
+
+  .sg-left {
+    padding: 32px;
+    border-right: 1px solid #1e2640;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .sg-right {
+    padding: 24px;
+    background: #070a14;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .sg-login-card {
+    background: #111827;
+    border: 1px solid #1e2640;
+    border-radius: 12px;
+    padding: 28px;
+  }
+
+  .sg-login-title {
+    font-size: 20px;
+    font-weight: 500;
+    color: #e8eaf0;
+    margin-bottom: 4px;
+  }
+
+  .sg-login-sub {
+    font-size: 13px;
+    color: #4a6fa5;
+    margin-bottom: 24px;
+  }
+
+  .sg-field {
+    margin-bottom: 16px;
+  }
+
+  .sg-field label {
+    display: block;
+    font-size: 12px;
+    color: #6b7fa8;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+
+  .sg-field input {
+    width: 100%;
+    background: #0d1221;
+    border: 1px solid #1e2640;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 14px;
+    color: #e8eaf0;
+    font-family: 'DM Sans', sans-serif;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+
+  .sg-field input:focus {
+    border-color: #3b82f6;
+  }
+
+  .sg-field input::placeholder { color: #2a3a5e; }
+
+  .sg-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #1d4ed8, #06d6a0);
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #fff;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: opacity 0.2s, transform 0.1s;
+    margin-top: 8px;
+  }
+
+  .sg-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+  .sg-btn:active { transform: scale(0.98); }
+
+  .sg-invisible-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #0a1520;
+    border: 1px solid #1a3050;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-top: 12px;
+    font-size: 11px;
+    color: #4a6fa5;
+  }
+
+  .sg-shield {
+    width: 14px; height: 14px;
+    background: #3b82f6;
+    border-radius: 50% 50% 40% 40%;
+    flex-shrink: 0;
+  }
+
+  .sg-section-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: #4a6fa5;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .sg-signal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .sg-signal-card {
+    background: #111827;
+    border: 1px solid #1e2640;
+    border-radius: 8px;
+    padding: 12px;
+  }
+
+  .sg-signal-name {
+    font-size: 10px;
+    color: #4a6fa5;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 4px;
+  }
+
+  .sg-signal-val {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    color: #06d6a0;
+  }
+
+  .sg-signal-bar {
+    height: 3px;
+    background: #1e2640;
+    border-radius: 2px;
+    margin-top: 6px;
+    overflow: hidden;
+  }
+
+  .sg-signal-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  .sg-score-wrap {
+    background: #111827;
+    border: 1px solid #1e2640;
+    border-radius: 10px;
+    padding: 16px;
+  }
+
+  .sg-score-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 36px;
+    font-weight: 700;
+    text-align: center;
+    margin: 8px 0;
+    transition: color 0.5s;
+  }
+
+  .sg-score-label {
+    text-align: center;
+    font-size: 11px;
+    color: #4a6fa5;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .sg-score-bar-wrap {
+    height: 8px;
+    background: #1e2640;
+    border-radius: 4px;
+    margin-top: 12px;
+    overflow: hidden;
+  }
+
+  .sg-score-bar {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s ease, background 0.6s;
+  }
+
+  .sg-verdict {
+    text-align: center;
+    margin-top: 10px;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 0.5px;
+    transition: background 0.5s, color 0.5s;
+  }
+
+  .sg-log {
+    background: #070a14;
+    border: 1px solid #1e2640;
+    border-radius: 8px;
+    padding: 12px;
+    height: 130px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #1e2640 transparent;
+  }
+
+  .sg-log-line {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: #3a5070;
+    line-height: 1.6;
+  }
+
+  .sg-log-line.active { color: #06d6a0; }
+  .sg-log-line.warn { color: #f59e0b; }
+
+  .sg-mouse-canvas {
+    width: 100%;
+    height: 120px;
+    background: #0a0e1a;
+    border: 1px solid #1e2640;
+    border-radius: 8px;
+    display: block;
+  }
+
+  .sg-flow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+  }
+
+  .sg-flow-step {
+    background: #111827;
+    border: 1px solid #1e2640;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 10px;
+    color: #4a6fa5;
+    font-family: 'Space Mono', monospace;
+    white-space: nowrap;
+  }
+
+  .sg-flow-arrow { color: #1e2640; font-size: 12px; }
+
+  .sg-flow-step.active {
+    border-color: #06d6a0;
+    color: #06d6a0;
+    background: #0a1a14;
+  }
+
+  /* ── Toast Notification ─────────────────────────────── */
+  .sg-toast-container {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    display: flex;
+    justify-content: center;
+    z-index: 9999;
+    pointer-events: none;
+  }
+
+  .sg-toast {
+    margin-top: -120px;
+    padding: 18px 36px;
+    border-radius: 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    pointer-events: auto;
+    transition: margin-top 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease;
+    opacity: 0;
+  }
+
+  .sg-toast.show {
+    margin-top: 30px;
+    opacity: 1;
+  }
+
+  .sg-toast.hide {
+    margin-top: -120px;
+    opacity: 0;
+  }
+
+  .sg-toast.success {
+    background: linear-gradient(135deg, #064e3b, #0a1a14);
+    border: 1px solid #06d6a0;
+    color: #06d6a0;
+  }
+
+  .sg-toast.warning {
+    background: linear-gradient(135deg, #451a03, #1a1200);
+    border: 1px solid #f59e0b;
+    color: #f59e0b;
+  }
+
+  .sg-toast.danger {
+    background: linear-gradient(135deg, #450a0a, #1a0808);
+    border: 1px solid #ef4444;
+    color: #ef4444;
+  }
+
+  .sg-toast-icon {
+    font-size: 28px;
+    line-height: 1;
+  }
+
+  .sg-toast-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .sg-toast-title {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+
+  .sg-toast-sub {
+    font-size: 12px;
+    opacity: 0.8;
+    font-weight: 400;
+  }
+
+  /* ── Login Success Overlay ──────────────────────────── */
+  .sg-success-overlay {
+    position: absolute;
+    inset: 0;
+    background: #111827;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    opacity: 0;
+    transform: scale(0.9);
+    transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    pointer-events: none;
+  }
+
+  .sg-success-overlay.visible {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
+  }
+
+  .sg-success-check {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    animation: checkPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
+  .sg-success-check.green {
+    background: radial-gradient(circle, #064e3b, #0a1a14);
+    border: 2px solid #06d6a0;
+  }
+
+  .sg-success-check.amber {
+    background: radial-gradient(circle, #451a03, #1a1200);
+    border: 2px solid #f59e0b;
+  }
+
+  .sg-success-check.red {
+    background: radial-gradient(circle, #450a0a, #1a0808);
+    border: 2px solid #ef4444;
+  }
+
+  @keyframes checkPop {
+    0% { transform: scale(0); }
+    60% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+  }
+
+  .sg-success-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: #e8eaf0;
+    text-align: center;
+  }
+
+  .sg-success-sub {
+    font-size: 13px;
+    color: #4a6fa5;
+    text-align: center;
+    max-width: 260px;
+  }
+
+  .sg-success-score {
+    font-family: 'Space Mono', monospace;
+    font-size: 14px;
+    margin-top: 6px;
+    padding: 6px 18px;
+    border-radius: 20px;
+  }
+
+  .sg-success-score.green { background: #0a1a14; color: #06d6a0; border: 1px solid #064e3b; }
+  .sg-success-score.amber { background: #1a1200; color: #f59e0b; border: 1px solid #451a03; }
+  .sg-success-score.red   { background: #1a0808; color: #ef4444; border: 1px solid #450a0a; }
+</style>
+
+<div class="sg-wrap" id="sgWrap">
+  <div class="sg-header">
+    <div class="sg-logo">
+      <div class="sg-logo-icon">🛡</div>
+      <div>
+        <div class="sg-logo-text">SILENTGUARD AI</div>
+        <div class="sg-logo-sub">Passive Human Verification</div>
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; gap: 16px;">
+      <a href="#" onclick="document.getElementById('signupOverlay').classList.remove('sg-hidden'); return false;" style="color: #06d6a0; text-decoration: none; font-size: 13px; font-weight: 500; font-family: 'DM Sans', sans-serif; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">Create Account</a>
+      <a href="dashboard.html" style="color: #4a6fa5; text-decoration: none; font-size: 13px; font-weight: 500; font-family: 'DM Sans', sans-serif; transition: color 0.2s;" onmouseover="this.style.color='#06d6a0'" onmouseout="this.style.color='#4a6fa5'">Admin Dashboard</a>
+      <div class="sg-status-pill">
+        <div class="sg-pulse"></div>
+        MONITORING ACTIVE
+      </div>
+    </div>
+  </div>
+
+  <div class="sg-main">
+    <div class="sg-left">
+      <div class="sg-section-label">Live demo — interact with this form</div>
+
+      <div class="sg-login-card" id="loginCard" style="position:relative;">
+        <div id="loginFormContent">
+          <div class="sg-login-title">Welcome back</div>
+          <div class="sg-login-sub">Sign in to your account</div>
+
+          <div class="sg-field">
+            <label>Email</label>
+            <input type="text" id="emailInput" placeholder="you@example.com" autocomplete="off" />
+          </div>
+          <div class="sg-field">
+            <label>Password</label>
+            <input type="password" id="passInput" placeholder="••••••••" autocomplete="off" />
+          </div>
+          <button class="sg-btn" id="loginBtn">Sign in</button>
+          <div class="sg-invisible-badge">
+            <div class="sg-shield"></div>
+            SilentGuard is verifying you in the background — no CAPTCHA needed
+          </div>
+        </div>
+        <div class="sg-success-overlay" id="successOverlay"></div>
+      </div>
+
+      <div>
+        <div class="sg-section-label">Mouse trajectory</div>
+        <canvas class="sg-mouse-canvas" id="mouseCanvas"></canvas>
+      </div>
+
+      <div>
+        <div class="sg-section-label">Processing pipeline</div>
+        <div class="sg-flow">
+          <div class="sg-flow-step active" id="step1">Collect</div>
+          <div class="sg-flow-arrow">→</div>
+          <div class="sg-flow-step" id="step2">Extract</div>
+          <div class="sg-flow-arrow">→</div>
+          <div class="sg-flow-step" id="step3">ML Model</div>
+          <div class="sg-flow-arrow">→</div>
+          <div class="sg-flow-step" id="step4">Decision</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sg-right">
+      <div class="sg-section-label">Human confidence score</div>
+      <div class="sg-score-wrap">
+        <div class="sg-score-label">Human Probability</div>
+        <div class="sg-score-num" id="scoreNum">—</div>
+        <div class="sg-score-bar-wrap">
+          <div class="sg-score-bar" id="scoreBar" style="width:0%"></div>
+        </div>
+        <div class="sg-verdict" id="verdict" style="background:#1e2640;color:#4a6fa5;">Waiting for interaction...</div>
+      </div>
+
+      <div class="sg-section-label">Behavioral signals</div>
+      <div class="sg-signal-grid">
+        <div class="sg-signal-card">
+          <div class="sg-signal-name">Mouse Speed</div>
+          <div class="sg-signal-val" id="sigMouseSpeed">0 px/s</div>
+          <div class="sg-signal-bar"><div class="sg-signal-fill" id="barMouseSpeed" style="width:0%;background:#3b82f6"></div></div>
+        </div>
+        <div class="sg-signal-card">
+          <div class="sg-signal-name">Curve Variance</div>
+          <div class="sg-signal-val" id="sigCurve">0.00</div>
+          <div class="sg-signal-bar"><div class="sg-signal-fill" id="barCurve" style="width:0%;background:#06d6a0"></div></div>
+        </div>
+        <div class="sg-signal-card">
+          <div class="sg-signal-name">Typing Rhythm</div>
+          <div class="sg-signal-val" id="sigTyping">— ms</div>
+          <div class="sg-signal-bar"><div class="sg-signal-fill" id="barTyping" style="width:0%;background:#f59e0b"></div></div>
+        </div>
+        <div class="sg-signal-card">
+          <div class="sg-signal-name">Scroll Events</div>
+          <div class="sg-signal-val" id="sigScroll">0</div>
+          <div class="sg-signal-bar"><div class="sg-signal-fill" id="barScroll" style="width:0%;background:#a78bfa"></div></div>
+        </div>
+        <div class="sg-signal-card">
+          <div class="sg-signal-name">Click Timing</div>
+          <div class="sg-signal-val" id="sigClick">—</div>
+          <div class="sg-signal-bar"><div class="sg-signal-fill" id="barClick" style="width:0%;background:#f43f5e"></div></div>
+        </div>
+        <div class="sg-signal-card">
+          <div class="sg-signal-name">Direction Changes</div>
+          <div class="sg-signal-val" id="sigDir">0</div>
+          <div class="sg-signal-bar"><div class="sg-signal-fill" id="barDir" style="width:0%;background:#06d6a0"></div></div>
+        </div>
+      </div>
+
+      <div class="sg-section-label">Activity log</div>
+      <div class="sg-log" id="activityLog">
+        <div class="sg-log-line">[INIT] SilentGuard v1.0 — collectors armed</div>
+        <div class="sg-log-line">[WAIT] Awaiting user interaction...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Signup Overlay -->
+<style>
+  .sg-signup-overlay {
+    position: fixed; inset: 0;
+    background: rgba(6, 9, 16, 0.88);
+    backdrop-filter: blur(12px);
+    z-index: 9998;
+    display: flex; align-items: center; justify-content: center;
+    transition: opacity 0.3s;
+  }
+  .sg-signup-overlay.sg-hidden { opacity: 0; pointer-events: none; }
+  .sg-signup-box {
+    background: linear-gradient(145deg, #0d1221, #111d35);
+    border: 1px solid #1e2640; border-radius: 20px;
+    width: 400px; padding: 32px; text-align: center; position: relative;
+    box-shadow: 0 32px 64px rgba(0,0,0,0.7);
+    animation: sgBoxPop 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes sgBoxPop {
+    0% { transform: scale(0.9) translateY(16px); opacity: 0; }
+    100% { transform: scale(1) translateY(0); opacity: 1; }
+  }
+  .sg-signup-close {
+    position: absolute; top: 14px; right: 14px;
+    width: 30px; height: 30px; border-radius: 8px;
+    border: 1px solid #1e2640; background: rgba(6,9,16,0.6);
+    color: #4a6fa5; font-size: 16px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .sg-signup-close:hover { border-color: #ef4444; color: #ef4444; }
+  .sg-signup-input {
+    width: 100%; padding: 12px 14px; margin-top: 14px;
+    background: #060910; border: 1px solid #1e2640;
+    color: #e8eaf0; border-radius: 10px; font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .sg-signup-input:focus { outline: none; border-color: #06d6a0; box-shadow: 0 0 0 3px rgba(6,214,160,0.12); }
+  .sg-signup-btn {
+    width: 100%; padding: 13px; margin-top: 20px;
+    background: linear-gradient(135deg, #06d6a0, #3b82f6);
+    color: #060910; font-weight: 700; border: none; border-radius: 10px;
+    cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 14px;
+    transition: all 0.2s;
+  }
+  .sg-signup-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(6,214,160,0.25); }
+  .sg-signup-msg { font-size: 12px; margin-top: 12px; padding: 8px 12px; border-radius: 8px; display: none; }
+  .sg-signup-msg.error { color: #ef4444; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); }
+  .sg-signup-msg.success { color: #06d6a0; background: rgba(6,214,160,0.08); border: 1px solid rgba(6,214,160,0.2); }
+</style>
+
+<div class="sg-signup-overlay sg-hidden" id="signupOverlay">
+  <div class="sg-signup-box">
+    <button class="sg-signup-close" onclick="document.getElementById('signupOverlay').classList.add('sg-hidden')">✕</button>
+    <div style="font-size: 28px; margin-bottom: 8px;">👤</div>
+    <div style="font-size: 20px; font-weight: 600; color: #e8eaf0; font-family: 'DM Sans', sans-serif;">Create Account</div>
+    <div style="font-size: 13px; color: #4a6fa5; margin-bottom: 4px;">Sign up for SilentGuard</div>
+    <input type="text" id="signupUser" class="sg-signup-input" placeholder="Choose a username (min 3 chars)">
+    <input type="password" id="signupPass" class="sg-signup-input" placeholder="Choose a password (min 6 chars)">
+    <button class="sg-signup-btn" onclick="handleSignup()">Create Account →</button>
+    <div class="sg-signup-msg error" id="signupError"></div>
+    <div class="sg-signup-msg success" id="signupSuccess"></div>
+    <div style="margin-top: 14px; font-size: 11px; color: #2a3a5e;">🔒 Your credentials are encrypted and stored securely</div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="sg-toast-container" id="toastContainer">
+  <div class="sg-toast" id="sgToast">
+    <div class="sg-toast-icon" id="toastIcon"></div>
+    <div class="sg-toast-text">
+      <div class="sg-toast-title" id="toastTitle"></div>
+      <div class="sg-toast-sub" id="toastSub"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const canvas = document.getElementById('mouseCanvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.offsetWidth || 400;
+  canvas.height = 120;
+
+  let mouseData = [], keyData = [], scrollData = [], clickData = [];
+
+  let lastX = null, lastY = null, lastT = null;
+  let dirChanges = 0, lastDir = null;
+  let mousePoints = [];
+
+  const log = document.getElementById('activityLog');
+  const scoreNum = document.getElementById('scoreNum');
+  const scoreBar = document.getElementById('scoreBar');
+  const verdict = document.getElementById('verdict');
+
+  function addLog(msg, type='') {
+    const d = document.createElement('div');
+    d.className = 'sg-log-line' + (type ? ' ' + type : '');
+    const ts = new Date().toLocaleTimeString('en', {hour12:false});
+    d.textContent = '[' + ts + '] ' + msg;
+    log.appendChild(d);
+    log.scrollTop = log.scrollHeight;
+    if (log.children.length > 40) log.removeChild(log.children[0]);
+  }
+
+  function updateSignal(id, barId, val, max, display) {
+    document.getElementById(id).textContent = display;
+    document.getElementById(barId).style.width = Math.min(100, (val/max)*100) + '%';
+  }
+
+  // ── Real-time ML scoring via backend RF model ──────────────────────
+  let _scoreTimer = null;
+  let _scoring = false;
+
+  function requestMLScore() {
+    // Call backend instantly without waiting
+    _fetchMLScore();
+
+    // Update pipeline steps immediately (visual feedback)
+    const steps = ['step1','step2','step3','step4'];
+    steps.forEach((id, i) => {
+      document.getElementById(id).classList.toggle('active',
+        mouseData.length + keyData.length > i * 2);
+    });
+  }
+
+  async function _fetchMLScore() {
+    if (_scoring) return;
+    if (mouseData.length === 0 && keyData.length === 0 && scrollData.length === 0) return;
+
+    _scoring = true;
+    try {
+      // Build a temporary session ID for real-time scoring
+      const rtSessionId = SESSION_ID + '_rt';
+
+      const mappedMouse = mouseData.map(m => ({ x: m.x, y: m.y, time: m.t, speed: m.speed }));
+      const mappedKeys = keyData.map(k => ({ key: k.key, time: k.t, interval: k.interval }));
+      const mappedScroll = scrollData.map(s => ({ position: s.y, time: s.t }));
+
+      // Send current behavioral data to the high-speed realtime validation endpoint
+      const res = await fetch(`${API_BASE}/verify-realtime`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: rtSessionId,
+          mouse_movements: mappedMouse,
+          keystrokes: mappedKeys,
+          scroll_events: mappedScroll,
+          browser_fingerprint: {
+            screen_width: window.innerWidth,
+            screen_height: window.innerHeight,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            language: navigator.language,
+            platform: navigator.platform,
+            hardware_concurrency: navigator.hardwareConcurrency || 0,
+            device_memory: navigator.deviceMemory || 0,
+            is_mobile: /Mobi|Android/i.test(navigator.userAgent)
+          },
+          request_timing: { click_count: clickData.length }
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
+      const result = await res.json();
+      const s = result.human_score;
+
+      // 3. Update UI with the real ML score
+      const pct = Math.round(s * 100);
+      scoreNum.textContent = s.toFixed(2);
+      scoreBar.style.width = pct + '%';
+
+      let col, bg, txt, status;
+      if (s >= 0.65) {
+        col = '#06d6a0'; bg = '#0a1a14'; txt = '#06d6a0';
+        status = 'HUMAN VERIFIED — access granted';
+      } else if (s >= 0.35) {
+        col = '#f59e0b'; bg = '#1a1200'; txt = '#f59e0b';
+        status = 'UNCERTAIN — secondary check recommended';
+      } else {
+        col = '#ef4444'; bg = '#1a0808'; txt = '#ef4444';
+        status = 'BOT SUSPECTED — triggering fallback';
+      }
+
+      scoreNum.style.color = col;
+      scoreBar.style.background = col;
+      verdict.style.background = bg;
+      verdict.style.color = txt;
+      verdict.textContent = status;
+
+      addLog('RF Model score: ' + s.toFixed(2), 'active');
+
+      // Activate all pipeline steps once we have an ML score
+      ['step1','step2','step3','step4'].forEach(id =>
+        document.getElementById(id).classList.add('active')
+      );
+
+    } catch (e) {
+      // Silently fail for real-time updates; backend may not be running or still booting up
+      console.warn('[SilentGuard] Real-time scoring failed:', e.message);
+    } finally {
+      // CRITICAL: Always release the scoring lock, regardless of success or error
+      _scoring = false;
+    }
+  }
+
+  function updateUI() {
+    requestMLScore();
+  }
+
+  // Mouse tracking
+  const wrap = document.getElementById('sgWrap');
+  wrap.addEventListener('mousemove', (e) => {
+    const rect = wrap.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const t = Date.now();
+
+    let speed = 0;
+    if (lastX !== null) {
+      const dx = x - lastX, dy = y - lastY, dt = t - lastT;
+      speed = dt > 0 ? Math.sqrt(dx*dx + dy*dy) / dt * 1000 : 0;
+      const dir = Math.atan2(dy, dx);
+      if (lastDir !== null && Math.abs(dir - lastDir) > 0.5) dirChanges++;
+      lastDir = dir;
+    }
+
+    mouseData.push({ x, y, t, speed });
+    mousePoints.push({ x, y });
+    if (mousePoints.length > 200) mousePoints.shift();
+
+    lastX = x; lastY = y; lastT = t;
+
+    // Draw path
+    const scaledX = (x / wrap.offsetWidth) * canvas.width;
+    const scaledY = (y / wrap.offsetHeight) * canvas.height;
+
+    ctx.fillStyle = 'rgba(10, 14, 26, 0.03)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    if (mousePoints.length > 1) {
+      const prev = mousePoints[mousePoints.length - 2];
+      const px = (prev.x / wrap.offsetWidth) * canvas.width;
+      const py = (prev.y / wrap.offsetHeight) * canvas.height;
+      ctx.beginPath();
+      ctx.moveTo(px, py);
+      ctx.lineTo(scaledX, scaledY);
+      ctx.strokeStyle = 'rgba(6, 214, 160, 0.6)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+
+    ctx.beginPath();
+    ctx.arc(scaledX, scaledY, 2, 0, Math.PI*2);
+    ctx.fillStyle = '#06d6a0';
+    ctx.fill();
+
+    const avgSpeed = mouseData.length > 0 ? mouseData.slice(-20).reduce((a,b)=>a+b.speed,0)/Math.min(20,mouseData.length) : 0;
+    updateSignal('sigMouseSpeed', 'barMouseSpeed', avgSpeed, 2000, Math.round(avgSpeed) + ' px/s');
+
+    const curveSig = Math.min(dirChanges / 20, 1);
+    updateSignal('sigCurve', 'barCurve', curveSig, 1, curveSig.toFixed(2));
+    updateSignal('sigDir', 'barDir', dirChanges, 50, dirChanges);
+
+    updateUI();
+  });
+
+  // Keyboard tracking
+  const emailInput = document.getElementById('emailInput');
+  const passInput = document.getElementById('passInput');
+
+  [emailInput, passInput].forEach(input => {
+    input.addEventListener('keydown', (e) => {
+      const t = Date.now();
+      const last = keyData.length > 0 ? keyData[keyData.length-1] : null;
+      const interval = last ? t - last.t : null;
+      keyData.push({ key: e.key, t, interval });
+
+      if (keyData.length === 1) addLog('Keystroke dynamics — first key detected', 'active');
+
+      if (keyData.length > 2) {
+        const intervals = keyData.slice(-5).map(k=>k.interval).filter(Boolean);
+        const avg = Math.round(intervals.reduce((a,b)=>a+b,0)/intervals.length);
+        updateSignal('sigTyping', 'barTyping', 1/avg * 5000, 100, avg + ' ms');
+        addLog('Key interval: ' + avg + 'ms');
+      }
+
+      updateUI();
+    });
+  });
+
+  // Scroll tracking
+  document.addEventListener('scroll', () => {
+    scrollData.push({ y: window.scrollY, t: Date.now() });
+    updateSignal('sigScroll', 'barScroll', scrollData.length, 20, scrollData.length);
+    addLog('Scroll event #' + scrollData.length);
+    updateUI();
+  });
+
+  // Click tracking
+  wrap.addEventListener('click', (e) => {
+    const t = Date.now();
+    const last = clickData.length > 0 ? clickData[clickData.length-1] : null;
+    const gap = last ? t - last.t : null;
+    clickData.push({ t });
+    if (gap) {
+      updateSignal('sigClick', 'barClick', 1/gap*20000, 100, gap + 'ms');
+      addLog('Click gap: ' + gap + 'ms — ' + (gap > 200 ? 'natural' : 'suspicious'), gap > 200 ? 'active' : 'warn');
+    } else {
+      addLog('First click registered', 'active');
+    }
+    updateUI();
+  });
+
+  const SESSION_ID = 'sg_' + Math.random().toString(36).substr(2, 9);
+  const API_BASE = 'http://localhost:8000/api';
+
+  // Login button
+  document.getElementById('loginBtn').addEventListener('click', async (e) => {
+    e.preventDefault();
+    
+    if (mouseData.length < 3 && keyData.length < 1) { 
+      addLog('Insufficient data — collecting more...', 'warn'); 
+      return; 
+    }
+
+    addLog('--- SENDING DATA TO BACKEND ---', 'active');
+    
+    try {
+      // 1. Map frontend field names to backend schema
+      const mappedMouse = mouseData.map(m => ({ x: m.x, y: m.y, time: m.t, speed: m.speed }));
+      const mappedKeys = keyData.map(k => ({ key: k.key, time: k.t, interval: k.interval }));
+      const mappedScroll = scrollData.map(s => ({ position: s.y, time: s.t }));
+
+      // 2. Send behavior data
+      await fetch(`${API_BASE}/collect-behavior`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+              session_id: SESSION_ID,
+              mouse_movements: mappedMouse,
+              keystrokes: mappedKeys,
+              scroll_events: mappedScroll,
+              browser_fingerprint: {
+                  screen_width: window.innerWidth,
+                  screen_height: window.innerHeight,
+                  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                  language: navigator.language,
+                  platform: navigator.platform,
+                  hardware_concurrency: navigator.hardwareConcurrency || 0,
+                  device_memory: navigator.deviceMemory || 0,
+                  is_mobile: /Mobi|Android/i.test(navigator.userAgent)
+              },
+              request_timing: { click_count: clickData.length }
+          })
+      });
+
+      addLog('Processing ML classification...', 'active');
+      
+      // 2. Request verification
+      const verifyRes = await fetch(`${API_BASE}/verify-human`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+              session_id: SESSION_ID,
+              include_features: true
+          })
+      });
+      
+      const result = await verifyRes.json();
+      
+      addLog('--- FINAL EVALUATION ---', 'active');
+      addLog('ML Human score: ' + result.human_score.toFixed(3));
+      
+      // Update UI explicitly with backend score
+      scoreNum.textContent = result.human_score.toFixed(2);
+      scoreBar.style.width = Math.round(result.human_score * 100) + '%';
+      
+      if (result.human_score >= 0.65) {
+        const col = '#06d6a0';
+        scoreNum.style.color = col;
+        scoreBar.style.background = col;
+        
+        addLog('Decision: ACCESS GRANTED — no CAPTCHA', 'active');
+        verdict.textContent = 'LOGIN SUCCESSFUL — Welcome!';
+        verdict.style.background = '#0a1a14';
+        verdict.style.color = col;
+
+        // Show success toast notification
+        showToast('success', '✅', 'Verified as Human', 'Access granted — no CAPTCHA needed');
+
+        // Transform login card into success overlay
+        const overlay = document.getElementById('successOverlay');
+        overlay.innerHTML = `
+          <div class="sg-success-check green">✓</div>
+          <div class="sg-success-title">Identity Verified</div>
+          <div class="sg-success-sub">SilentGuard confirmed you are human based on your behavioral patterns. No CAPTCHA was needed.</div>
+          <div class="sg-success-score green">Human Score: ${result.human_score.toFixed(2)}</div>
+        `;
+        setTimeout(() => overlay.classList.add('visible'), 200);
+
+      } else if (result.human_score >= 0.35) {
+        const col = '#f59e0b';
+        scoreNum.style.color = col;
+        scoreBar.style.background = col;
+        
+        addLog('Decision: OTP / CAPTCHA fallback triggered', 'warn');
+        verdict.textContent = 'SECONDARY CHECK REQUIRED';
+        verdict.style.background = '#1a1200';
+        verdict.style.color = col;
+
+        // Show warning toast notification
+        showToast('warning', '⚠️', 'Additional Verification Needed', 'Please complete the secondary check below');
+
+        // Show Turnstile fallback in the overlay
+        const overlay = document.getElementById('successOverlay');
+        overlay.innerHTML = `
+          <div class="sg-success-check amber">?</div>
+          <div class="sg-success-title">Secondary Check Required</div>
+          <div class="sg-success-sub">Your confidence score is uncertain. Please verify below.</div>
+          <div class="sg-success-score amber">Human Score: ${result.human_score.toFixed(2)}</div>
+          <div style="margin-top: 16px; padding: 16px; display: flex; align-items: center; justify-content: center; width: 300px; min-height: 80px;">
+            <div id="turnstile-container"></div>
+          </div>
+        `;
+        setTimeout(() => {
+          overlay.classList.add('visible');
+          // Cloudflare's public testing sitekey (always passes)
+          // Documentation: https://developers.cloudflare.com/turnstile/reference/testing/
+          if (window.turnstile) {
+            window.turnstile.render('#turnstile-container', {
+              sitekey: '1x00000000000000000000AA',
+              theme: 'dark',
+              callback: function(token) {
+                 addLog('Turnstile CAPTCHA solved successfully!', 'active');
+                 document.getElementById('toastSub').textContent = 'CAPTCHA solved successfully. Access granted.';
+                 document.getElementById('toastIcon').textContent = '✅';
+                 document.getElementById('sgToast').className = 'sg-toast success';
+              }
+            });
+          }
+        }, 200);
+
+      } else {
+        const col = '#ef4444';
+        scoreNum.style.color = col;
+        scoreBar.style.background = col;
+        
+        addLog('Decision: REQUEST BLOCKED — bot suspected', 'warn');
+        verdict.textContent = 'BLOCKED — Suspicious activity detected';
+        verdict.style.background = '#1a0808';
+        verdict.style.color = col;
+
+        // Show danger toast notification
+        showToast('danger', '🚫', 'Access Denied', 'Bot-like behavior detected — request blocked');
+
+        // Show blocked overlay
+        const overlay = document.getElementById('successOverlay');
+        overlay.innerHTML = `
+          <div class="sg-success-check red">✕</div>
+          <div class="sg-success-title">Access Blocked</div>
+          <div class="sg-success-sub">SilentGuard detected automated or bot-like behavior patterns. This request has been denied.</div>
+          <div class="sg-success-score red">Human Score: ${result.human_score.toFixed(2)}</div>
+        `;
+        setTimeout(() => overlay.classList.add('visible'), 200);
+      }
+      
+    } catch (e) {
+      console.error(e);
+      addLog('API ERROR: Is the backend running?', 'warn');
+    }
+  });
+
+  // Toast notification helper
+  function showToast(type, icon, title, sub) {
+    const toast = document.getElementById('sgToast');
+    const toastIcon = document.getElementById('toastIcon');
+    const toastTitle = document.getElementById('toastTitle');
+    const toastSub = document.getElementById('toastSub');
+
+    toast.className = 'sg-toast ' + type;
+    toastIcon.textContent = icon;
+    toastTitle.textContent = title;
+    toastSub.textContent = sub;
+
+    // Trigger show animation
+    requestAnimationFrame(() => {
+      toast.classList.add('show');
+    });
+
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+      toast.classList.remove('show');
+      toast.classList.add('hide');
+    }, 5000);
+  }
+
+  // Initial anim
+  setTimeout(() => addLog('Mouse tracking armed', 'active'), 800);
+  setTimeout(() => addLog('Keystroke dynamics — armed', 'active'), 1200);
+  setTimeout(() => addLog('Scroll analyzer — armed', 'active'), 1600);
+  setTimeout(() => addLog('ML engine ready — awaiting signals', 'active'), 2000);
+})();
+
+// ── Self-Signup Handler (outside IIFE so it's accessible from onclick) ──
+async function handleSignup() {
+  const user = document.getElementById('signupUser').value.trim();
+  const pass = document.getElementById('signupPass').value;
+  const errorEl = document.getElementById('signupError');
+  const successEl = document.getElementById('signupSuccess');
+  const API = 'http://localhost:8000/api';
+
+  errorEl.style.display = 'none';
+  successEl.style.display = 'none';
+
+  if (user.length < 3) { errorEl.textContent = 'Username must be at least 3 characters'; errorEl.style.display = 'block'; return; }
+  if (pass.length < 6) { errorEl.textContent = 'Password must be at least 6 characters'; errorEl.style.display = 'block'; return; }
+
+  try {
+    const res = await fetch(`${API}/auth/signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: user, password: pass })
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      successEl.textContent = `✓ ${data.message}`;
+      successEl.style.display = 'block';
+      document.getElementById('signupUser').value = '';
+      document.getElementById('signupPass').value = '';
+    } else {
+      const err = await res.json().catch(() => ({}));
+      errorEl.textContent = err.detail || 'Signup failed';
+      errorEl.style.display = 'block';
+    }
+  } catch (err) {
+    errorEl.textContent = '⚠️ Server unreachable';
+    errorEl.style.display = 'block';
+  }
+}
+</script>
+
+</body>
+</html>

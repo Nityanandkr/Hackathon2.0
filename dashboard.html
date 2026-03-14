@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="SilentGuard AI Admin Dashboard — Monitor bot traffic, human verification rates, and session history.">
+  <title>SilentGuard AI — Admin Dashboard</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡</text></svg>">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #060910;
+      color: #e8eaf0;
+      min-height: 100vh;
+    }
+
+    /* ── Header ─────────────────────────────────────────── */
+    .db-header {
+      background: #0a0e1a;
+      border-bottom: 1px solid #1e2640;
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .db-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .db-logo-icon {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #3b82f6, #06d6a0);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+
+    .db-logo-text {
+      font-family: 'Space Mono', monospace;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    .db-logo-sub {
+      font-size: 11px;
+      color: #4a6fa5;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .db-nav {
+      display: flex;
+      gap: 12px;
+    }
+
+    .db-nav a {
+      text-decoration: none;
+      color: #4a6fa5;
+      font-size: 13px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .db-nav a:hover { border-color: #1e2640; color: #e8eaf0; }
+    .db-nav a.active { border-color: #06d6a0; color: #06d6a0; background: #0a1a14; }
+
+    /* ── Main ───────────────────────────────────────────── */
+    .db-main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px;
+    }
+
+    .db-title {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .db-subtitle {
+      font-size: 13px;
+      color: #4a6fa5;
+      margin-bottom: 28px;
+    }
+
+    /* ── Stats Grid ─────────────────────────────────────── */
+    .db-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .db-stat-card {
+      background: #0d1221;
+      border: 1px solid #1e2640;
+      border-radius: 12px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .db-stat-card::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      border-radius: 12px 12px 0 0;
+    }
+
+    .db-stat-card.green::after { background: linear-gradient(90deg, #06d6a0, #34d399); }
+    .db-stat-card.red::after { background: linear-gradient(90deg, #ef4444, #f87171); }
+    .db-stat-card.amber::after { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+    .db-stat-card.blue::after { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+
+    .db-stat-label {
+      font-size: 11px;
+      color: #4a6fa5;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    .db-stat-value {
+      font-family: 'Space Mono', monospace;
+      font-size: 32px;
+      font-weight: 700;
+    }
+
+    .db-stat-value.green { color: #06d6a0; }
+    .db-stat-value.red { color: #ef4444; }
+    .db-stat-value.amber { color: #f59e0b; }
+    .db-stat-value.blue { color: #3b82f6; }
+
+    .db-stat-sub {
+      font-size: 12px;
+      color: #4a6fa5;
+      margin-top: 4px;
+    }
+
+    /* ── Charts Row ─────────────────────────────────────── */
+    .db-charts {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .db-card {
+      background: #0d1221;
+      border: 1px solid #1e2640;
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .db-card-title {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      color: #4a6fa5;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 16px;
+    }
+
+    /* ── Donut Chart ────────────────────────────────────── */
+    .db-donut-wrap {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+    }
+
+    .db-donut {
+      width: 140px;
+      height: 140px;
+      position: relative;
+    }
+
+    .db-donut canvas {
+      width: 140px;
+      height: 140px;
+    }
+
+    .db-donut-center {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .db-donut-pct {
+      font-family: 'Space Mono', monospace;
+      font-size: 24px;
+      font-weight: 700;
+      color: #06d6a0;
+    }
+
+    .db-donut-label {
+      font-size: 10px;
+      color: #4a6fa5;
+    }
+
+    .db-legend {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .db-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+    }
+
+    .db-legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .db-legend-val {
+      font-family: 'Space Mono', monospace;
+      margin-left: auto;
+      color: #6b7fa8;
+    }
+
+    /* ── Score Distribution ─────────────────────────────── */
+    .db-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+      height: 120px;
+    }
+
+    .db-bar-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      height: 100%;
+      justify-content: flex-end;
+    }
+
+    .db-bar {
+      width: 100%;
+      border-radius: 4px 4px 0 0;
+      min-height: 4px;
+      transition: height 0.5s ease;
+    }
+
+    .db-bar-label {
+      font-size: 9px;
+      color: #4a6fa5;
+      font-family: 'Space Mono', monospace;
+    }
+
+    /* ── Session Table ──────────────────────────────────── */
+    .db-table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      color: #4a6fa5;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      text-align: left;
+      padding: 10px 14px;
+      border-bottom: 1px solid #1e2640;
+    }
+
+    td {
+      font-size: 13px;
+      padding: 12px 14px;
+      border-bottom: 1px solid #111827;
+      color: #c0c8d8;
+    }
+
+    tr:hover td { background: #111827; }
+
+    .db-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: 'Space Mono', monospace;
+    }
+
+    .db-badge.verified {
+      background: #0a1a14;
+      color: #06d6a0;
+      border: 1px solid #064e3b;
+    }
+
+    .db-badge.suspicious {
+      background: #1a1200;
+      color: #f59e0b;
+      border: 1px solid #451a03;
+    }
+
+    .db-badge.blocked {
+      background: #1a0808;
+      color: #ef4444;
+      border: 1px solid #450a0a;
+    }
+
+    .db-badge.pending {
+      background: #111827;
+      color: #4a6fa5;
+      border: 1px solid #1e2640;
+    }
+
+    .db-score-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .db-score-track {
+      flex: 1;
+      height: 6px;
+      background: #1e2640;
+      border-radius: 3px;
+      overflow: hidden;
+      max-width: 80px;
+    }
+
+    .db-score-fill {
+      height: 100%;
+      border-radius: 3px;
+    }
+
+    .db-score-val {
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      min-width: 36px;
+    }
+
+    .db-empty {
+      text-align: center;
+      padding: 40px;
+      color: #4a6fa5;
+      font-size: 14px;
+    }
+
+    .db-refresh-btn {
+      background: #111827;
+      border: 1px solid #1e2640;
+      color: #4a6fa5;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+      font-family: 'Space Mono', monospace;
+      transition: all 0.2s;
+    }
+
+    .db-refresh-btn:hover { border-color: #06d6a0; color: #06d6a0; }
+
+    .db-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    /* ── Privacy Banner ─────────────────────────────────── */
+    .db-privacy {
+      background: #0d1221;
+      border: 1px solid #1e2640;
+      border-radius: 12px;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+      color: #4a6fa5;
+      margin-top: 24px;
+    }
+
+    .db-privacy-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    /* ── Loading Spinner ────────────────────────────────── */
+    .db-spinner {
+      width: 24px; height: 24px;
+      border: 3px solid #1e2640;
+      border-top-color: #06d6a0;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 40px auto;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Login Overlay ──────────────────────────────────── */
+    .db-login-overlay {
+      position: fixed; inset: 0;
+      background: rgba(6, 9, 16, 0.88);
+      backdrop-filter: blur(12px);
+      z-index: 1000;
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+    .db-login-overlay.hidden {
+      opacity: 0; pointer-events: none;
+      transform: scale(1.02);
+    }
+
+    .db-login-box {
+      background: linear-gradient(145deg, #0d1221 0%, #111d35 100%);
+      border: 1px solid #1e2640;
+      border-radius: 20px;
+      padding: 0;
+      width: 420px;
+      text-align: center;
+      box-shadow: 0 32px 64px -16px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(59, 130, 246, 0.08);
+      animation: boxAppear 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+      overflow: hidden;
+      position: relative;
+    }
+    @keyframes boxAppear {
+      0% { transform: scale(0.9) translateY(20px); opacity: 0; }
+      100% { transform: scale(1) translateY(0); opacity: 1; }
+    }
+
+    /* Close button */
+    .db-close-btn {
+      position: absolute; top: 16px; right: 16px;
+      width: 32px; height: 32px; border-radius: 8px;
+      border: 1px solid #1e2640; background: rgba(6, 9, 16, 0.6);
+      color: #4a6fa5; font-size: 18px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s; z-index: 10;
+    }
+    .db-close-btn:hover { border-color: #ef4444; color: #ef4444; background: rgba(239, 68, 68, 0.08); }
+
+    /* Header */
+    .db-login-header {
+      padding: 32px 32px 0;
+    }
+    .db-login-header .db-logo-icon {
+      margin: 0 auto 12px;
+      width: 44px; height: 44px; border-radius: 12px; font-size: 22px;
+      box-shadow: 0 8px 24px rgba(59, 130, 246, 0.2);
+    }
+
+    /* Tabs */
+    .db-tabs {
+      display: flex; margin: 20px 32px 0; border-radius: 10px;
+      background: #060910; border: 1px solid #1e2640; overflow: hidden;
+    }
+    .db-tab {
+      flex: 1; padding: 10px; font-size: 13px; font-weight: 600;
+      font-family: 'Space Mono', monospace; letter-spacing: 0.5px;
+      color: #4a6fa5; cursor: pointer; border: none; background: none;
+      transition: all 0.3s; position: relative;
+    }
+    .db-tab.active { color: #06d6a0; background: rgba(6, 214, 160, 0.06); }
+    .db-tab.active::after {
+      content: ''; position: absolute; bottom: 0; left: 20%; right: 20%;
+      height: 2px; background: #06d6a0; border-radius: 2px;
+    }
+    .db-tab:hover:not(.active) { color: #e8eaf0; }
+
+    /* Panels */
+    .db-panel { display: none; padding: 24px 32px 32px; animation: fadeSlide 0.35s ease; }
+    .db-panel.active { display: block; }
+    @keyframes fadeSlide {
+      0% { opacity: 0; transform: translateY(8px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Input fields */
+    .db-input-group {
+      position: relative; margin-top: 16px;
+    }
+    .db-input-group .db-input-icon {
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      font-size: 14px; color: #4a6fa5; pointer-events: none;
+    }
+    .db-input-group input {
+      width: 100%; padding: 13px 14px 13px 42px;
+      background: #060910; border: 1px solid #1e2640;
+      color: #e8eaf0; border-radius: 10px;
+      font-family: 'DM Sans', sans-serif; font-size: 14px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .db-input-group input:focus {
+      outline: none; border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+    }
+    .db-input-group input::placeholder { color: #2a3a5e; }
+
+    /* Buttons */
+    .db-login-btn {
+      width: 100%; padding: 13px; margin-top: 24px;
+      background: linear-gradient(135deg, #3b82f6, #06d6a0);
+      color: #060910; font-weight: 700; border: none; border-radius: 10px;
+      cursor: pointer; transition: all 0.25s; font-family: 'DM Sans', sans-serif; font-size: 14px;
+      letter-spacing: 0.3px;
+      position: relative; overflow: hidden;
+    }
+    .db-login-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(59, 130, 246, 0.25); }
+    .db-login-btn:active { transform: scale(0.98); }
+    .db-login-btn.loading { pointer-events: none; opacity: 0.7; }
+    .db-login-btn.loading::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, #3b82f6, #06d6a0);
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .db-register-btn {
+      width: 100%; padding: 13px; margin-top: 24px;
+      background: linear-gradient(135deg, #8b5cf6, #ec4899);
+      color: #fff; font-weight: 700; border: none; border-radius: 10px;
+      cursor: pointer; transition: all 0.25s; font-family: 'DM Sans', sans-serif; font-size: 14px;
+    }
+    .db-register-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(139, 92, 246, 0.25); }
+    .db-register-btn:active { transform: scale(0.98); }
+
+    /* Feedback */
+    .db-login-error {
+      color: #ef4444; font-size: 12px; margin-top: 14px; display: none;
+      padding: 8px 12px; background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px;
+      animation: shake 0.4s ease;
+    }
+    .db-login-success {
+      color: #06d6a0; font-size: 12px; margin-top: 14px; display: none;
+      padding: 8px 12px; background: rgba(6, 214, 160, 0.08);
+      border: 1px solid rgba(6, 214, 160, 0.2); border-radius: 8px;
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      75% { transform: translateX(6px); }
+    }
+
+    /* Footer */
+    .db-login-footer {
+      padding: 16px 32px; border-top: 1px solid #1e2640;
+      font-size: 11px; color: #2a3a5e;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .db-login-footer span { color: #4a6fa5; }
+
+    @media (max-width: 900px) {
+      .db-stats { grid-template-columns: repeat(2, 1fr); }
+      .db-charts { grid-template-columns: 1fr; }
+      .db-login-box { width: 90%; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Login Overlay -->
+  <div class="db-login-overlay" id="loginOverlay">
+    <div class="db-login-box">
+      <button class="db-close-btn" id="loginCloseBtn" title="Close">✕</button>
+
+      <div class="db-login-header">
+        <div class="db-logo-icon">🛡</div>
+        <div class="db-title" style="font-size: 20px;">SilentGuard Admin</div>
+        <div class="db-subtitle" style="margin-bottom: 0;">Secure Control Panel</div>
+      </div>
+
+      <!-- Login Form -->
+      <div style="padding: 24px 32px 32px;">
+        <form id="loginForm" onsubmit="handleLogin(event)">
+          <div class="db-input-group">
+            <span class="db-input-icon">👤</span>
+            <input type="text" id="adminUser" placeholder="Username" required autocomplete="username">
+          </div>
+          <div class="db-input-group">
+            <span class="db-input-icon">🔑</span>
+            <input type="password" id="adminPass" placeholder="Password" required autocomplete="current-password">
+          </div>
+          <button type="submit" class="db-login-btn" id="loginSubmitBtn">Secure Login →</button>
+          <div class="db-login-error" id="loginError">Invalid credentials</div>
+        </form>
+      </div>
+
+      <div class="db-login-footer">
+        <span>🔒</span> Encrypted with JWT · Session-scoped tokens
+      </div>
+    </div>
+  </div>
+
+  <div class="db-header">
+    <div class="db-logo">
+      <div class="db-logo-icon">🛡</div>
+      <div>
+        <div class="db-logo-text">SILENTGUARD AI</div>
+        <div class="db-logo-sub">Admin Dashboard</div>
+      </div>
+    </div>
+    <div class="db-nav">
+      <a href="silentguard_behavior_collector.html">Live Demo</a>
+      <a href="dashboard.html" class="active">Dashboard</a>
+      <a href="#" id="logoutBtn" onclick="logout(); return false;" style="color:#ef4444; border-color:#450a0a;">Logout</a>
+    </div>
+  </div>
+
+  <div class="db-main">
+    <h1 class="db-title">Security Overview</h1>
+    <p class="db-subtitle">Real-time monitoring of bot traffic, human verifications, and session analysis</p>
+
+    <!-- Stats Cards -->
+    <div class="db-stats">
+      <div class="db-stat-card blue">
+        <div class="db-stat-label">Total Sessions</div>
+        <div class="db-stat-value blue" id="statTotal">—</div>
+        <div class="db-stat-sub">All time</div>
+      </div>
+      <div class="db-stat-card green">
+        <div class="db-stat-label">Humans Verified</div>
+        <div class="db-stat-value green" id="statHuman">—</div>
+        <div class="db-stat-sub" id="statHumanRate">—</div>
+      </div>
+      <div class="db-stat-card red">
+        <div class="db-stat-label">Bots Blocked</div>
+        <div class="db-stat-value red" id="statBot">—</div>
+        <div class="db-stat-sub" id="statBotRate">—</div>
+      </div>
+      <div class="db-stat-card amber">
+        <div class="db-stat-label">Suspicious</div>
+        <div class="db-stat-value amber" id="statSuspicious">—</div>
+        <div class="db-stat-sub">Required fallback</div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="db-charts">
+      <div class="db-card">
+        <div class="db-card-title">Traffic Breakdown</div>
+        <div class="db-donut-wrap">
+          <div class="db-donut">
+            <canvas id="donutCanvas" width="140" height="140"></canvas>
+            <div class="db-donut-center">
+              <div class="db-donut-pct" id="donutPct">—</div>
+              <div class="db-donut-label">Human Rate</div>
+            </div>
+          </div>
+          <div class="db-legend">
+            <div class="db-legend-item">
+              <div class="db-legend-dot" style="background:#06d6a0"></div>
+              Human Verified
+              <span class="db-legend-val" id="legendHuman">0</span>
+            </div>
+            <div class="db-legend-item">
+              <div class="db-legend-dot" style="background:#ef4444"></div>
+              Bots Blocked
+              <span class="db-legend-val" id="legendBot">0</span>
+            </div>
+            <div class="db-legend-item">
+              <div class="db-legend-dot" style="background:#f59e0b"></div>
+              Suspicious
+              <span class="db-legend-val" id="legendSus">0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="db-card">
+        <div class="db-card-title">Avg Human Confidence Score</div>
+        <div style="display:flex;align-items:center;justify-content:center;height:140px;">
+          <div style="text-align:center;">
+            <div id="avgScoreDisplay" style="font-family:'Space Mono',monospace;font-size:56px;font-weight:700;color:#06d6a0;">—</div>
+            <div style="font-size:12px;color:#4a6fa5;margin-top:4px;">Average across all scored sessions</div>
+            <div style="margin-top:12px;height:8px;background:#1e2640;border-radius:4px;width:200px;overflow:hidden;">
+              <div id="avgScoreBar" style="height:100%;border-radius:4px;background:#06d6a0;width:0%;transition:width 0.6s ease;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Session History -->
+    <div class="db-card">
+      <div class="db-card-header">
+        <div class="db-card-title" style="margin-bottom:0;">Recent Sessions</div>
+        <button class="db-refresh-btn" id="refreshBtn" onclick="loadDashboard()">⟳ Refresh</button>
+      </div>
+      <div class="db-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Session ID</th>
+              <th>Human Score</th>
+              <th>Status</th>
+              <th>Action</th>
+              <th>Signals</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody id="sessionTableBody">
+            <tr><td colspan="6"><div class="db-spinner"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Privacy Banner -->
+    <div class="db-privacy">
+      <div class="db-privacy-icon">🔒</div>
+      <div>
+        <strong>Privacy-First Design</strong> — SilentGuard only collects behavioral signals (mouse patterns, typing rhythm, scroll behavior). No personal data, passwords, or keystrokes content are stored. Device fingerprints are hashed. All data is session-scoped and auto-expires.
+      </div>
+    </div>
+
+    <!-- User Management -->
+    <div class="db-card" style="margin-top: 24px;">
+      <div class="db-card-header">
+        <div class="db-card-title" style="margin-bottom:0;">👥 User Management</div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 12px; align-items: end;">
+        <div>
+          <label style="font-size: 11px; color: #4a6fa5; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 6px;">Username</label>
+          <input type="text" id="regUser" placeholder="min 3 characters" required minlength="3"
+            style="width:100%; padding: 10px 12px; background: #060910; border: 1px solid #1e2640; color: #e8eaf0; border-radius: 8px; font-size: 13px; font-family: 'DM Sans', sans-serif;">
+        </div>
+        <div>
+          <label style="font-size: 11px; color: #4a6fa5; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 6px;">Password</label>
+          <input type="password" id="regPass" placeholder="min 6 characters" required minlength="6"
+            style="width:100%; padding: 10px 12px; background: #060910; border: 1px solid #1e2640; color: #e8eaf0; border-radius: 8px; font-size: 13px; font-family: 'DM Sans', sans-serif;">
+        </div>
+        <div>
+          <label style="font-size: 11px; color: #4a6fa5; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 6px;">Role</label>
+          <select id="regRole"
+            style="width:100%; padding: 10px 12px; background: #060910; border: 1px solid #1e2640; color: #e8eaf0; border-radius: 8px; font-size: 13px; font-family: 'DM Sans', sans-serif; cursor: pointer;">
+            <option value="admin">Admin</option>
+            <option value="user">User</option>
+          </select>
+        </div>
+        <button onclick="handleRegister()" class="db-register-btn" style="margin-top: 0; padding: 10px 24px; white-space: nowrap;">+ Create</button>
+      </div>
+      <div class="db-login-error" id="regError" style="margin-top: 12px;">Registration failed</div>
+      <div class="db-login-success" id="regSuccess" style="margin-top: 12px;">✓ User created</div>
+    </div>
+  </div>
+
+<script>
+const API_BASE = 'http://localhost:8000/api';
+
+function drawDonut(human, bot, suspicious) {
+  const canvas = document.getElementById('donutCanvas');
+  const ctx = canvas.getContext('2d');
+  const cx = 70, cy = 70, r = 55, lw = 18;
+  const total = human + bot + suspicious || 1;
+
+  ctx.clearRect(0, 0, 140, 140);
+
+  const segments = [
+    { val: human, color: '#06d6a0' },
+    { val: bot, color: '#ef4444' },
+    { val: suspicious, color: '#f59e0b' },
+  ];
+
+  let startAngle = -Math.PI / 2;
+  segments.forEach(seg => {
+    const sweep = (seg.val / total) * Math.PI * 2;
+    if (sweep > 0) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, startAngle, startAngle + sweep);
+      ctx.strokeStyle = seg.color;
+      ctx.lineWidth = lw;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+      startAngle += sweep + 0.04;
+    }
+  });
+
+  // Empty ring if no data
+  if (total <= 1 && human === 0 && bot === 0 && suspicious === 0) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.strokeStyle = '#1e2640';
+    ctx.lineWidth = lw;
+    ctx.stroke();
+  }
+}
+
+function getScoreColor(score) {
+  if (score >= 0.8) return '#06d6a0';
+  if (score >= 0.5) return '#f59e0b';
+  return '#ef4444';
+}
+
+function formatTime(ts) {
+  if (!ts) return '—';
+  const d = new Date(ts * 1000);
+  return d.toLocaleTimeString('en', { hour12: false }) + ' ' + d.toLocaleDateString('en', { month: 'short', day: 'numeric' });
+}
+
+async function loadDashboard() {
+  const token = sessionStorage.getItem('sg_token');
+  if (!token) return; // Don't load if not logged in
+
+  const headers = {
+      'Authorization': `Bearer ${token}`
+  };
+
+  try {
+    // Load stats
+    const statsRes = await fetch(`${API_BASE}/dashboard/stats`, { headers });
+    if (statsRes.status === 401) {
+        logout();
+        return;
+    }
+    const stats = await statsRes.json();
+
+    document.getElementById('statTotal').textContent = stats.total_sessions;
+    document.getElementById('statHuman').textContent = stats.human_sessions;
+    document.getElementById('statHumanRate').textContent = stats.human_rate + '% of traffic';
+    document.getElementById('statBot').textContent = stats.bot_sessions;
+    document.getElementById('statBotRate').textContent = stats.bot_rate + '% of traffic';
+    document.getElementById('statSuspicious').textContent = stats.suspicious_sessions;
+
+    // Donut chart
+    drawDonut(stats.human_sessions, stats.bot_sessions, stats.suspicious_sessions);
+    document.getElementById('donutPct').textContent = stats.human_rate + '%';
+    document.getElementById('legendHuman').textContent = stats.human_sessions;
+    document.getElementById('legendBot').textContent = stats.bot_sessions;
+    document.getElementById('legendSus').textContent = stats.suspicious_sessions;
+
+    // Average score
+    const avgScore = stats.avg_human_score;
+    document.getElementById('avgScoreDisplay').textContent = avgScore.toFixed(2);
+    document.getElementById('avgScoreDisplay').style.color = getScoreColor(avgScore);
+    document.getElementById('avgScoreBar').style.width = (avgScore * 100) + '%';
+    document.getElementById('avgScoreBar').style.background = getScoreColor(avgScore);
+
+    // Load sessions
+    const sessRes = await fetch(`${API_BASE}/dashboard/sessions?limit=20`, { headers });
+    const sessions = await sessRes.json();
+
+    const tbody = document.getElementById('sessionTableBody');
+
+    if (sessions.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="db-empty">No sessions yet. Open the <a href="silentguard_behavior_collector.html" style="color:#3b82f6">Live Demo</a> and interact to generate data.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = sessions.map(s => {
+      const scoreColor = getScoreColor(s.human_score);
+      const badgeClass = s.status === 'verified' ? 'verified' : s.status === 'blocked' ? 'blocked' : s.status === 'suspicious' ? 'suspicious' : 'pending';
+      const actionLabel = s.action === 'allow' ? '✅ Allow' : s.action === 'block' ? '🚫 Block' : s.action === 'otp_required' ? '⚠️ OTP' : '⏳ Pending';
+
+      return `<tr>
+        <td><code style="font-size:12px;color:#6b7fa8;">${s.session_id}</code></td>
+        <td>
+          <div class="db-score-bar">
+            <span class="db-score-val" style="color:${scoreColor}">${s.human_score.toFixed(2)}</span>
+            <div class="db-score-track">
+              <div class="db-score-fill" style="width:${s.human_score * 100}%;background:${scoreColor}"></div>
+            </div>
+          </div>
+        </td>
+        <td><span class="db-badge ${badgeClass}">${s.status}</span></td>
+        <td>${actionLabel}</td>
+        <td>${s.signal_count}</td>
+        <td style="font-size:12px;color:#6b7fa8;">${formatTime(s.timestamp)}</td>
+      </tr>`;
+    }).join('');
+
+  } catch (e) {
+    console.error('Dashboard load error:', e);
+    document.getElementById('sessionTableBody').innerHTML =
+      '<tr><td colspan="6" class="db-empty">⚠️ Cannot connect to backend. Make sure the server is running on port 8000.</td></tr>';
+  }
+}
+
+// ── Tab Switching ──────────────────────────────────────────
+function switchTab(btn) {
+  // Deactivate all tabs and panels
+  document.querySelectorAll('.db-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.db-panel').forEach(p => p.classList.remove('active'));
+
+  // Activate clicked tab + its panel
+  btn.classList.add('active');
+  document.getElementById(btn.dataset.panel).classList.add('active');
+
+  // Clear any lingering feedback messages
+  document.querySelectorAll('.db-login-error, .db-login-success').forEach(el => el.style.display = 'none');
+}
+
+// ── Close Button ───────────────────────────────────────────
+document.getElementById('loginCloseBtn').addEventListener('click', () => {
+  // Navigate away — don't just hide the overlay (security)
+  window.location.href = 'silentguard_behavior_collector.html';
+});
+
+// ── Auth: Login ────────────────────────────────────────────
+async function handleLogin(e) {
+  e.preventDefault();
+  const user = document.getElementById('adminUser').value;
+  const pass = document.getElementById('adminPass').value;
+  const errorEl = document.getElementById('loginError');
+  const btn = document.getElementById('loginSubmitBtn');
+  
+  errorEl.style.display = 'none';
+  btn.classList.add('loading');
+  btn.textContent = 'Authenticating...';
+
+  try {
+    const res = await fetch(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: user, password: pass })
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      sessionStorage.setItem('sg_token', data.access_token);
+      btn.textContent = '✓ Authenticated';
+      setTimeout(() => {
+        document.getElementById('loginOverlay').classList.add('hidden');
+        btn.classList.remove('loading');
+        btn.textContent = 'Secure Login →';
+        loadDashboard();
+      }, 600);
+    } else {
+      const err = await res.json().catch(() => ({}));
+      errorEl.textContent = err.detail || 'Invalid credentials';
+      errorEl.style.display = 'block';
+      btn.classList.remove('loading');
+      btn.textContent = 'Secure Login →';
+    }
+  } catch (err) {
+    errorEl.textContent = '⚠️ Server unreachable — is the backend running?';
+    errorEl.style.display = 'block';
+    btn.classList.remove('loading');
+    btn.textContent = 'Secure Login →';
+  }
+}
+
+// ── Auth: Register (requires existing JWT) ─────────────────
+async function handleRegister() {
+  const user = document.getElementById('regUser').value.trim();
+  const pass = document.getElementById('regPass').value;
+  const role = document.getElementById('regRole').value;
+  const errorEl = document.getElementById('regError');
+  const successEl = document.getElementById('regSuccess');
+
+  errorEl.style.display = 'none';
+  successEl.style.display = 'none';
+
+  if (user.length < 3) {
+    errorEl.textContent = 'Username must be at least 3 characters';
+    errorEl.style.display = 'block';
+    return;
+  }
+  if (pass.length < 6) {
+    errorEl.textContent = 'Password must be at least 6 characters';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  const token = sessionStorage.getItem('sg_token');
+  if (!token) {
+    errorEl.textContent = '⚠️ You must log in first before creating new users';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ username: user, password: pass, role: role })
+    });
+
+    if (res.ok) {
+      successEl.textContent = `✓ ${role.charAt(0).toUpperCase() + role.slice(1)} "${user}" created successfully!`;
+      successEl.style.display = 'block';
+      document.getElementById('regUser').value = '';
+      document.getElementById('regPass').value = '';
+    } else {
+      const err = await res.json().catch(() => ({}));
+      errorEl.textContent = err.detail || 'Registration failed';
+      errorEl.style.display = 'block';
+    }
+  } catch (err) {
+    errorEl.textContent = '⚠️ Server unreachable';
+    errorEl.style.display = 'block';
+  }
+}
+
+// ── Logout ─────────────────────────────────────────────────
+function logout() {
+    sessionStorage.removeItem('sg_token');
+    document.getElementById('loginOverlay').classList.remove('hidden');
+    document.getElementById('adminPass').value = '';
+}
+
+// ── Initialization ─────────────────────────────────────────
+
+// SECURITY: Always require re-authentication on page load.
+// Never auto-skip the login overlay based on a stale token.
+// The token from a previous session is cleared on every page exit.
+sessionStorage.removeItem('sg_token');
+
+// SECURITY: Clear the token whenever the user navigates away
+// This prevents the "switch to demo and back" bypass
+window.addEventListener('pagehide', () => {
+  sessionStorage.removeItem('sg_token');
+});
+
+// Auto-refresh every 10 seconds if logged in
+setInterval(() => {
+    if (sessionStorage.getItem('sg_token')) loadDashboard();
+}, 10000);
+</script>
+
+</body>
+</html>
